@@ -6,6 +6,7 @@
   <remote fetch="https://git.yoctoproject.org/git" name="yocto"/>
   <remote fetch="https://github.com/Freescale" name="freescale"/>
   <remote fetch="https://github.com/openembedded" name="oe"/>
+  <remote fetch="https://source.codeaurora.org/external/imx" name="CAF"/>
 
   <project remote="yocto" revision="master" name="poky" path="sources/poky"/>
   <project remote="yocto" revision="master" name="meta-freescale" path="sources/meta-freescale"/>
@@ -20,5 +21,8 @@
   <project remote="freescale" revision="master" name="meta-freescale-3rdparty" path="sources/meta-freescale-3rdparty"/>
   <project remote="freescale" revision="master" name="meta-freescale-distro" path="sources/meta-freescale-distro"/>
   <project remote="freescale" revision="master" name="Documentation" path="sources/Documentation"/>
-
+  <project remote="CAF" revision="master" name="meta-fsl-bsp-release" path="sources/meta-fsl-bsp-release" >
+      <linkfile src="imx/tools/fsl-setup-release.sh" dest="fsl-setup-release.sh"/>
+      <linkfile src="imx/README" dest="README-IMXBSP"/>
+   </project>
 </manifest>
