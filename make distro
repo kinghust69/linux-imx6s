@@ -1,0 +1,118 @@
+1/ Host packages
+Essential Yocto Project host packages are:
+$ sudo apt-get install gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath  socat  libsdl1.2-dev
+
+i.MX layers host packages for a Ubuntu 12.04 or 14.04 host setup are:
+$ sudo apt-get install libsdl1.2-dev xterm  sed cvs subversion coreutils texi2html docbook-utils python-pysqlite2 help2man make gcc g++ desktop-file-utils libgl1-mesa-dev libglu1-mesa-dev mercurial autoconf automake groff curl lzop asciidoc
+
+i.MX layers host packages for a Ubuntu 12.04 host setup only are:
+$ sudo apt-get install uboot-mkimage 
+
+i.MX layers host packages for a Ubuntu 14.04 host setup only are:
+$ sudo apt-get install u-boot-tools 
+
+The configuration tool uses the default version of grep that is on your build machine. If there is a different version of grep inyour path, it may cause builds to fail. One workaround is to rename the special version to something not containing "grep".
+
+2/ Setting up the repo utility
+
+Repo is a tool built on top of Git that makes it easier to manage projects that contain multiple repositories, which do not needto be on the same server. Repo complements very well the layered nature of the Yocto Project, making it easier for users toadd their own layers to the BSP.
+To install the “repo” utility, perform these steps:
+
+1.  Create a bin folder in the home directory.
+$ mkdir ~/bin (this step may not be needed if the bin folder already exists)
+$ curl http://commondatastorage.googleapis.com/git-repo-downloads/repo  > ~/bin/repo
+$ chmod a+x ~/bin/repo
+
+2.  Add the following line to the .bashrc file to ensure that the ~/bin folder is in your PATH variable.
+$ export PATH=~/bin:$PATH
+
+3/ Yocto Project 
+Setup First make sure that git is setup properly with the commands below.
+$ git config --global user.name "Your Name"
+$ git config --global user.email "Your Email"
+$ git config --list
+
+Image Build
+$ mkdir fsl-release-bsp
+$ cd fsl-release-bsp
+$ repo init -u https://source.codeaurora.org/external/imx/imx-manifest -b imx-linux-sumo -m imx-4.14.98-2.0.0_ga.xml
+$ repo sync
+
+The syntax for the fsl-setup-release script is shown below.
+$ DISTRO=<distro name> MACHINE=<machine name> source fsl-setup-release.sh -b <build dir>
+
+<distro> list:
+•  fsl-imx-x11 - Only X11 graphics
+•  fsl-imx-wayland - Wayland weston graphics
+•  fsl-imx-xwayland - Wayland graphics and X11. X11 applications using EGL are not supported
+•  fsl-imx-fb - Frame Buffer graphics - no X11 or Wayland
+
+<MACHINE> list:
+•  imx6qpsabreauto
+•  imx6qpsabresd
+•  imx6ulevk
+•  imx6dlsabreauto
+•  imx6dlsabresd
+•  imx6qsabreauto
+•  imx6qsabresd
+•  imx6slevk
+•  imx6solosabreauto
+•  imx6solosabresd
+•  imx6sxsabresd
+•  imx6sxsabreauto
+•  imx7dsabresd
+
+--> $ DISTRO=fsl-imx-x11 MACHINE=imx6ulevk source fsl-setup-release.sh -b build-x11
+
+Building an image
+The Yocto Project build uses the bitbake command. For example, bitbake <component> builds the named component.Each component build has multiple tasks, such as fetching, configuration, compilation, packaging, and deploying to the targetrootfs. The bitbake image build gathers all the components required by the image and build in order of the dependency pertask. The first build is the toolchain along with the tools required for the components to build.
+The following command is an example on how to build an image:
+
+<image project> list:
+•  core-image-minimal 
+<> A small image that only allows a device to boot.>
+•  core-image-base 
+<> A console-only image that fully supports the target devicehardware.>
+•  core-image-sato 
+<> An image with Sato, a mobile environment and visual stylefor mobile devices. The image supports X11 with a Satotheme and uses Pimlico applications. It contains aterminal, an editor and a file manager.>
+•  fsl-image-machine-test 
+<> An FSL Community i.MX core image with consoleenvironment - no GUI interface>
+•  fsl-image-gui 
+<> Builds a Freescale image with a GUI without any Qtcontent>
+•  fsl-image-qt5 
+<> Builds an opensource Qt 5 image. These images are onlysupported for i.MX SoC with hardware graphics. They arenot supported on the i.MX 6UltraLite and i.MX 7Dual> 
+
+# Edit the local.conf to add more module:
+
+$ CORE_IMAGE_EXTRA_INSTALL += "python-pip ppp apt curl git screen python3 python3-pip"
+Or: 
+IMAGE_INSTALL_append = "python-pip screen ppp apt git curl"
+# Install Chromium
+# Add Chromium
+IMAGE_INSTALL_append = \
+    "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', ' chromium-ozone-wayland libexif', \
+        bb.utils.contains('DISTRO_FEATURES',     'x11', ' chromium-x11 libexif', \
+                                                        '', d), d)}"
+LICENSE_FLAGS_WHITELIST = \
+    "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'commercial', \
+        bb.utils.contains('DISTRO_FEATURES',     'x11', 'commercial', \
+                                                        '', d), d)}"
+
+# Install firefox
+IMAGE_INSTALL_append =  "firefox libexif"
+LICENSE_FLAGS_WHITELIST = "commercial"
+
+# Add mozilla
+IMAGE_INSTALL_append =  "mozilla libexif"
+
+# This is good configure which are tested.
+CORE_IMAGE_EXTRA_INSTALL += "python-pip ppp apt curl git screen python3 python3-pip"
+IMAGE_INSTALL_append =  "firefox libexif"
+LICENSE_FLAGS_WHITELIST = "commercial"
+
+# Edit the kernel configuration:
+
+$ bitbake virtual/kernel -c menuconfig
+Then go to: 
+> Device Drivers > Network device support > 
+$ bitbake fsl-image-gui
